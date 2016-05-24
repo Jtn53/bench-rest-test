@@ -1,42 +1,52 @@
-var request = require('request');
-var axios = require('axios');
 var prompt = require('prompt');
 var sprintf = require('sprintf-js').sprintf;
 var logic = require('./functions.js');
 var _ = require('lodash');
 
-var stringFormat = "%-5s%-15s%-60s%-10s%-40s";
+var transactionStringFormat = "%-15s%-50s%-10s%-40s";
 var viewMainMenu = 0;
 var viewLedgerOption = 1;
 var viewDailyBalanceOption = 2;
 var quitOption = 3;
 
 module.exports = {
-
+  /**
+    * Go to a specific screen or exit the application based on a user's input option
+    **/
   navigateToMenu : function(menu, transactions) {
-    if (menu == viewMainMenu) { showMainMenu(transactions); }
-    else if (menu == viewLedgerOption) { showLedgerMenu(transactions); }
-    else if (menu == viewDailyBalanceOption) { console.log("not yet"); }
+    if (menu == viewMainMenu) { showMainScreen(transactions); }
+    else if (menu == viewLedgerOption) { showLedgerScreen(transactions); }
+    else if (menu == viewDailyBalanceOption) { showDailyBalanceScreen(transactions); }
     else if (menu == quitOption) { process.exit(); }
     else { console.log("Invalid option selected. Try again!"); getMainMenuPrompt(); };
   }
 }
 
-function showMainMenu(transactions){
+/**
+  * Main screen that shows all transactions and prompts user to select an option
+  **/
+function showMainScreen(transactions){
   var storedTransactions = transactions;
+  printLine();
+  console.log(sprintf(transactionStringFormat, "DATE", "LEDGER", "AMOUNT", "COMPANY"));
+  printLine();
 
-  console.log(sprintf(stringFormat, "ID", "DATE", "LEDGER", "AMOUNT", "COMPANY"));
+  // loop and display all the transactions
   for(var i=0; i<storedTransactions.length; i++) {
-    console.log(sprintf(stringFormat, i, storedTransactions[i].Date, storedTransactions[i].Ledger,
+    console.log(sprintf(transactionStringFormat, storedTransactions[i].Date, storedTransactions[i].Ledger,
       storedTransactions[i].Amount, storedTransactions[i].Company));
   }
-  console.log("TOTAL BALANCE: " + logic.getTotalBalance(storedTransactions));
-  console.log("Select from the following options: ");
-  console.log(viewMainMenu + ") View all transactions");
-  console.log(viewLedgerOption + ") View total balance from a ledger");
-  console.log(viewDailyBalanceOption + ") View daily balances");
-  console.log(quitOption + ") Exit");
 
+  printLine();
+  console.log("TOTAL BALANCE: " + logic.getTotalBalance(storedTransactions));
+  printLine();
+  showMainMenu(transactions);
+}
+
+/**
+  * Menu for user to select options
+  **/
+function showMainMenu(transactions) {
   var promptSchema = {
     properties: {
       option: {
@@ -48,20 +58,31 @@ function showMainMenu(transactions){
     }
   };
 
+  console.log("Select from the following options: ");
+  console.log(viewMainMenu + ") View all transactions");
+  console.log(viewLedgerOption + ") View total balance from a ledger");
+  console.log(viewDailyBalanceOption + ") View daily balances");
+  console.log(quitOption + ") Exit");
+
   prompt.get(promptSchema, function(err, result) {
     module.exports.navigateToMenu(result.option, transactions);
   });
 }
 
-function showLedgerMenu(transactions) {
+/**
+  * Show the screen that displays all the transactions in a selected ledgerList
+  **/
+function showLedgerScreen(transactions) {
+  printLine();
   console.log("CHOOSE A LEDGER TO VIEW LEDGER'S TOTAL BALANCE: ");
-  logic.getLedgers(transactions).then(function(ledgers) {
-    var ledgerList = _.uniq(ledgers);
-    for (var i=0; i<ledgerList.length; i++){
-      console.log(i + ") " + ledgerList[i]);
-    }
-    return Promise.all(ledgerList);
-  }).then(function(ledgerList){
+  printLine();
+  var ledgerList = logic.getLedgers(transactions);
+
+  // loop through and display all the possible ledgers for the user to select
+  for (var i=0; i<ledgerList.length; i++){
+    console.log(i + ") " + ledgerList[i]);
+  }
+  return Promise.all(ledgerList).then(function(ledgerList){
     var promptSchema = {
       properties: {
         option: {
@@ -73,36 +94,44 @@ function showLedgerMenu(transactions) {
       }
     };
 
+    // display the qualifying transactions after the user enters a ledger option into the prompt
     prompt.get(promptSchema, function(err, result) {
-      console.log("You chose " + result.option);
-      logic.getTransactionsByLedger(transactions, ledgerList[result.option]).then(function(transactionsInLedger) {
-        console.log(sprintf(stringFormat, "ID", "DATE", "LEDGER", "AMOUNT", "COMPANY"));
-        for(var i=0; i<transactionsInLedger.length; i++) {
-          console.log(sprintf(stringFormat, i, transactionsInLedger[i].Date, transactionsInLedger[i].Ledger,
-            transactionsInLedger[i].Amount, transactionsInLedger[i].Company));
-        }
-        console.log("TOTAL BALANCE IN LEDGER: " + logic.getTotalBalance(transactionsInLedger));
-        console.log("Select from the following options: ");
-        console.log(viewMainMenu + ") View all transactions");
-        console.log(viewLedgerOption + ") View total balance from a ledger");
-        console.log(viewDailyBalanceOption + ") View daily balances");
-        console.log(quitOption + ") Exit");
-
-        var promptSchema = {
-          properties: {
-            option: {
-              description: "Select an option",
-              pattern: /^\d{1}$/,
-              message: "Enter a number corresponding to an option",
-              required: true
-            }
-          }
-        };
-
-        prompt.get(promptSchema, function(err, result) {
-          module.exports.navigateToMenu(result.option, transactions);
-        });
+      var transactionsInLedger = logic.getTransactionsByLedger(transactions, ledgerList[result.option]);
+      printLine();
+      console.log(sprintf(transactionStringFormat, "DATE", "LEDGER", "AMOUNT", "COMPANY"));
+      printLine();
+      // Display all the transactions in the selected ledger
+      _.map(transactionsInLedger, function(key, value) {
+        console.log(sprintf(transactionStringFormat, key.Date, key.Ledger, key.Amount, key.Company));
       });
+      printLine();
+      console.log("TOTAL BALANCE IN LEDGER: " + logic.getTotalBalance(transactionsInLedger));
+      printLine();
+      showMainMenu(transactions);
     });
   });
+}
+
+/**
+  * Show the running total
+  **/
+function showDailyBalanceScreen(transactions) {
+  var dates = logic.getDates(transactions);
+  var dateStringFormat = "%-15s%-15s";
+  console.log(sprintf(dateStringFormat, "DATE", "RUNNING TOTAL"));
+
+  // Display all the dates + running totals
+  var dateBalance = 0;
+  _.map(dates, function(key, value) {
+    dateBalance += logic.getTotalBalance(logic.getTransactionsByDate(transactions, key));
+    console.log(sprintf(dateStringFormat, key, dateBalance));
+  });
+  showMainMenu(transactions);
+}
+
+/**
+  * Print a line in the console
+  **/
+function printLine() {
+  console.log("------------------------------------------------------------------------------------------------");
 }
