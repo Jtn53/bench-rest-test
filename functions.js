@@ -96,12 +96,30 @@ module.exports = {
     return _.sum(_.map(transactions, function(key, value) {
       return _.toNumber(key.Amount);
     }));
+  },
+
+  /**
+    * Returns an array of available ledgers from a list of transactions
+    **/
+  getLedgers : function(transactions) {
+    var ledgers = [];
+    for(var i=0; i<transactions.length; i++) {
+      ledgers.push(transactions[i].Ledger);
+    }
+    return Promise.all(ledgers);
+  },
+
+  /**
+    * Returns all transactions from a given category from a list of transactions
+    **/
+  getTransactionsByLedger : function(transactions, ledger) {
+    var transactionsResult = [];
+    for(var i=0; i<transactions.length; i++) {
+      if (transactions[i].Ledger == ledger) {
+        transactionsResult.push(transactions[i]);
+      }
+    }
+
+    return Promise.all(transactionsResult);
   }
-  //
-  // /**
-  //   * Returns all transactions from a given category from a list of transactions
-  //   **/
-  // function getTransactionsByCategory(transactions, category) {
-  //
-  // }
 }

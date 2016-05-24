@@ -19,7 +19,7 @@ logic.getTransactionsTotalCount().then(function(transactionCount) {
 }).then(function(nonDuplicatedTransactions) {
   return logic.cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
 }).then(function(transactionsClean) {
-  menus.showMainMenu(transactionsClean);
+  menus.navigateToMenu(0, transactionsClean);
 }).catch(function(err){
   console.log(err);
 });
