@@ -1,6 +1,7 @@
 var request = require('request');
 var axios = require('axios');
 var prompt = require('prompt');
+var _ = require('lodash');
 
 module.exports = {
   /**
@@ -53,24 +54,37 @@ module.exports = {
   },
 
 
-  // /**
-  //   * Remove all duplicates from an array of transactions.
-  //   * Assumption is that transactions with the same date, ledger, and value are duplicates.
-  //   **/
-  // function removeDuplicates() {
+  /**
+    * Remove all duplicates from an array of transactions.
+    * Assumption is that transactions with the same date, ledger, and value are duplicates.
+    **/
+  // function removeDuplicates(transactions) {
+  //
   //
   // }
 
   /**
     * Cleans up the company names. This is a difficult problem that would require discussion.
-    * For now, I am making the assumption that anything not alphanumeric is "garbage"
+    * For now, I am making the assumption that anything not alphanumeric or a space is "garbage"
     **/
-  function cleanCompanyName(name) {
-    return name.replace(/^[a-z0-9]+$/i, '');
+  cleanCompanyNamesInTransactions : function(transactions) {
+    //TODO: Don't modify the passed-in transactions
+    var transactionsResult = [];
+    for(var i=0; i<transactions.length; i++) {
+      transactions[i].Company = transactions[i].Company.replace(/[^A-Za-z\s]/g, '');
+      transactionsResult.push(transactions[i]);
+    }
+    return Promise.all(transactionsResult);
+  },
+
+  /**
+    * Return the total balance from a given array of transactions
+    **/
+  getTotalBalance : function(transactions) {
+    return _.sum(_.map(transactions, function(key, value) {
+      return _.toNumber(key.Amount);
+    }));
   }
-  // function getTotalBalance() {
-  //
-  // }
   //
   // /**
   //   * Returns all transactions from a given category from a list of transactions

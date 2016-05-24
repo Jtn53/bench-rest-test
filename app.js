@@ -3,6 +3,7 @@ var axios = require('axios');
 var prompt = require('prompt');
 var logic = require('./functions.js');
 var menus = require('./menus.js');
+var _ = require('lodash');
 
 var transactions = [];
 
@@ -13,8 +14,10 @@ console.log("Grabbing all transactions....");
 logic.getTransactionsTotalCount().then(function(transactionCount) {
   return logic.getTransactionPagesByCount(transactionCount);
 }).then(function(transactionsByPage) {
-  transactions = [].concat.apply([], transactionsByPage);
-  menus.showMainMenu();
+  transactionsDirty = _.flatten(transactionsByPage);
+  return logic.cleanCompanyNamesInTransactions(transactionsDirty);
+}).then(function(transactionsClean) {
+  menus.showMainMenu(transactionsClean);
 }).catch(function(err){
   console.log(err);
 });
