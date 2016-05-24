@@ -53,15 +53,26 @@ module.exports = {
     });
   },
 
-
   /**
-    * Remove all duplicates from an array of transactions.
+    * Takes in array of transactions and returns array with duplicates removed
     * Assumption is that transactions with the same date, ledger, and value are duplicates.
     **/
-  // function removeDuplicates(transactions) {
-  //
-  //
-  // }
+  removeDuplicates : function(transactions) {
+    var associativeTransactions = {};
+
+    for(var i=0; i<transactions.length; i++) {
+      var transaction = transactions[i];
+      associativeTransactions[transaction.Date + transaction.Ledger + transaction.Amount + transaction.Company] = transaction;
+    }
+
+    var i = 0;
+    var nonDuplicatedTransactions = [];
+    for (var transaction in associativeTransactions) {
+      nonDuplicatedTransactions[i++] = associativeTransactions[transaction];
+    }
+
+    return Promise.all(nonDuplicatedTransactions);
+  },
 
   /**
     * Cleans up the company names. This is a difficult problem that would require discussion.
@@ -70,6 +81,7 @@ module.exports = {
   cleanCompanyNamesInTransactions : function(transactions) {
     //TODO: Don't modify the passed-in transactions
     var transactionsResult = [];
+
     for(var i=0; i<transactions.length; i++) {
       transactions[i].Company = transactions[i].Company.replace(/[^A-Za-z\s]/g, '');
       transactionsResult.push(transactions[i]);

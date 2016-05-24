@@ -14,8 +14,10 @@ console.log("Grabbing all transactions....");
 logic.getTransactionsTotalCount().then(function(transactionCount) {
   return logic.getTransactionPagesByCount(transactionCount);
 }).then(function(transactionsByPage) {
-  transactionsDirty = _.flatten(transactionsByPage);
-  return logic.cleanCompanyNamesInTransactions(transactionsDirty);
+  transactionsDuplicates = _.flatten(transactionsByPage);
+  return logic.removeDuplicates(transactionsDuplicates);
+}).then(function(nonDuplicatedTransactions) {
+  return logic.cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
 }).then(function(transactionsClean) {
   menus.showMainMenu(transactionsClean);
 }).catch(function(err){
