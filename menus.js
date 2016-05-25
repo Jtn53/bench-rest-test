@@ -24,19 +24,18 @@ export function navigateToMenu(menu, transactions) {
   * Main screen that shows all transactions and prompts user to select an option
   **/
 function showMainScreen(transactions){
-  let storedTransactions = transactions;
   printLine();
   console.log(sprintf(transactionStringFormat, "DATE", "LEDGER", "AMOUNT", "COMPANY"));
   printLine();
 
   // loop and display all the transactions
-  for(let i=0; i<storedTransactions.length; i++) {
-    console.log(sprintf(transactionStringFormat, storedTransactions[i].Date, storedTransactions[i].Ledger,
-      storedTransactions[i].Amount, storedTransactions[i].Company));
+  for(let i=0; i<transactions.length; i++) {
+    console.log(sprintf(transactionStringFormat, transactions[i].Date, transactions[i].Ledger,
+      transactions[i].Amount, transactions[i].Company));
   }
 
   printLine();
-  console.log(`TOTAL BALANCE: ${logic.getTotalBalance(storedTransactions)}`);
+  console.log(`TOTAL BALANCE: ${logic.getTotalBalance(transactions)}`);
   showMainMenu(transactions);
 }
 
@@ -73,10 +72,10 @@ function showLedgerScreen(transactions) {
   printLine();
   console.log("CHOOSE A LEDGER TO VIEW LEDGER'S TOTAL BALANCE: ");
   printLine();
-  let ledgerList = logic.getLedgers(transactions);
+  const ledgerList = logic.getLedgers(transactions);
 
   // loop through and display all the possible ledgers for the user to select
-  for (var i=0; i<ledgerList.length; i++){
+  for (let i=0; i<ledgerList.length; i++){
     console.log(`${i}) ${ledgerList[i]}`);
   }
   return Promise.all(ledgerList).then((ledgerList) => {
@@ -93,7 +92,7 @@ function showLedgerScreen(transactions) {
 
     // display the qualifying transactions after the user enters a ledger option into the prompt
     prompt.get(promptSchema, (err, result) => {
-      var transactionsInLedger = logic.getTransactionsByLedger(transactions, ledgerList[result.option]);
+      const transactionsInLedger = logic.getTransactionsByLedger(transactions, ledgerList[result.option]);
       printLine();
       console.log(sprintf(transactionStringFormat, "DATE", "LEDGER", "AMOUNT", "COMPANY"));
       printLine();
@@ -112,7 +111,7 @@ function showLedgerScreen(transactions) {
   * Show the running total
   **/
 function showDailyBalanceScreen(transactions) {
-  let dates = logic.getDates(transactions);
+  const dates = logic.getDates(transactions);
   const dateStringFormat = "%-15s%-15s";
 
   printLine();

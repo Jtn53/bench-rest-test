@@ -10,15 +10,13 @@ import _ from 'lodash';
   * 4) Cleans company names
   **/
 export function getAllTransactions() {
-  return new Promise(function(resolve,reject) {
-    getTransactionPageProperties().then(([totalCount, countPerPage]) => {
-      return getTransactionPagesByCount(totalCount, countPerPage);
-    }).then((transactionsByPage) => {
-      let nonDuplicatedTransactions = removeDuplicates(transactionsByPage);
-      resolve(cleanCompanyNamesInTransactions(nonDuplicatedTransactions));
-    }).catch((err) => {
-      reject(err);
-    });
+  return getTransactionPageProperties().then(([totalCount, countPerPage]) => {
+    return getTransactionPagesByCount(totalCount, countPerPage);
+  }).then((transactionsByPage) => {
+    const nonDuplicatedTransactions = removeDuplicates(transactionsByPage);
+    return cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
+  }).catch((err) => {
+    console.log(err);
   });
 }
 
@@ -26,7 +24,7 @@ export function getAllTransactions() {
   * Return the total balance from a given array of transactions
   **/
 export function getTotalBalance(transactions) {
-  let sum = _.sum(_.map(transactions, (key) => { return Number(key.Amount); }));
+  const sum = _.sum(_.map(transactions, (key) => { return Number(key.Amount); }));
   /**
     * We are rounding to 2 decimal places. There is a transaction that's causing
     * the sum to freak out and go to like 8 decimals. Due to time, this is the workaround.
@@ -77,13 +75,11 @@ export function getDates(transactions) {
 function getTransactionPageProperties(){
   const url = "https://resttest.bench.co/transactions/1.json";
 
-  return new Promise((resolve, reject) => {
-    axios.get(url).then((response) => {
-      resolve([response.data.totalCount, Object.keys(response.data.transactions).length]);
-    }).catch(err => {
-      console.log(err);
-    });
-  })
+  return axios.get(url).then((response) => {
+    return [response.data.totalCount, Object.keys(response.data.transactions).length];
+  }).catch(err => {
+    console.log(err);
+  });
 }
 
 /**
@@ -111,13 +107,12 @@ function getTransactionPagesByCount(maxCount, countPerPage){
   * Returns an array of transaction arrays in a given page by calling the API
   **/
 function getTransactionsByPage(page) {
-  let url = `https://resttest.bench.co/transactions/${page}.json`;
-  return new Promise((resolve, reject) => {
-    axios.get(url).then((response) => {
-      resolve(response.data.transactions);
-    }).catch((err) => {
-      console.log(err);
-    });
+  const url = `https://resttest.bench.co/transactions/${page}.json`;
+
+  return axios.get(url).then((response) => {
+    return response.data.transactions;
+  }).catch((err) => {
+    console.log(err);
   });
 }
 

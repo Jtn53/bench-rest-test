@@ -1,6 +1,6 @@
-var prompt = require('prompt');
-var logic = require('./functions.js');
-var menus = require('./menus.js');
+import prompt from 'prompt';
+import * as logic from './functions.js';
+import * as menus from './menus.js';
 
 prompt.start();
 console.log("Starting program!");
