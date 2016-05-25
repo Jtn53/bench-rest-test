@@ -71,7 +71,7 @@ export function getDates(transactions) {
 }
 
 /**
-  * Return the total number of transactions in total and per page. 
+  * Return the total number of transactions in total and per page.
   * Assume that as long as there's at least one transaction, the 1.json page will exist
   **/
 function getTransactionPageProperties(){
@@ -124,24 +124,13 @@ function getTransactionsByPage(page) {
 /**
   * Takes in array of transactions and returns array with duplicates removed
   * Assumption is that transactions with the same date, ledger, and value are duplicates.
-  * This is a pretty ghetto way to remove duplicates. If I have time, this can be better.
   **/
 function removeDuplicates(transactions) {
-  // Create an associative array that has the transaction details all stored in the key
-  let associativeTransactions = {};
-  for(let i=0; i<transactions.length; i++) {
-    let transaction = transactions[i];
-    associativeTransactions[transaction.Date + transaction.Ledger + transaction.Amount + transaction.Company] = transaction;
-  }
-  /** Since duplicate keys aren't allowed, by copying the associative array to a new one,
-    * any duplicate keys about to be inserted into the new array will be ignored.
-    **/
-  let j = 0;
-  let nonDuplicatedTransactions = [];
-  for (let transaction in associativeTransactions) {
-    nonDuplicatedTransactions[j++] = associativeTransactions[transaction];
-  }
-  return nonDuplicatedTransactions;
+  // Filter duplicates by grabbing all the properties in the transaction and then joining them.
+  // Then compare the joined transaction properties with each other and remove deuplicates.
+  return _.uniqBy(transactions, (key) => {
+    return [_.valuesIn(key)].join();
+  });
 }
 
 /**
