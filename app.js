@@ -7,7 +7,7 @@ console.log("Starting program!");
 
 // grab all the transactions, then display to user
 logic.getAllTransactions().then((transactions) => {
-  menus.navigateToMenu(0, transactions);
+  menus.navigateToMenu(menus.viewMainMenu, transactions);
 }).catch((err) => {
   console.log(err);
 });

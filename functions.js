@@ -1,5 +1,4 @@
 import axios from 'axios';
-import prompt from 'prompt';
 import _ from 'lodash';
 
 /**
@@ -76,7 +75,7 @@ function getTransactionPageProperties(){
   const url = "https://resttest.bench.co/transactions/1.json";
 
   return axios.get(url).then((response) => {
-    return [response.data.totalCount, Object.keys(response.data.transactions).length];
+    return [response.data.totalCount, response.data.transactions.length];
   }).catch(err => {
     console.log(err);
   });
