@@ -14,11 +14,8 @@ export function getAllTransactions() {
     getTransactionPageProperties().then(([totalCount, countPerPage]) => {
       return getTransactionPagesByCount(totalCount, countPerPage);
     }).then((transactionsByPage) => {
-      return removeDuplicates(transactionsByPage);
-    }).then((nonDuplicatedTransactions) => {
-      return cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
-    }).then((transactionsClean) => {
-      resolve(transactionsClean);
+      let nonDuplicatedTransactions = removeDuplicates(transactionsByPage);
+      resolve(cleanCompanyNamesInTransactions(nonDuplicatedTransactions));
     }).catch((err) => {
       reject(err);
     });
@@ -34,7 +31,7 @@ export function getTotalBalance(transactions) {
     * We are rounding to 2 decimal places. There is a transaction that's causing
     * the sum to freak out and go to like 8 decimals. Due to time, this is the workaround.
     */
-  return sum.toFixed(2);
+  return Number(sum.toFixed(2));
 }
 
 /**
@@ -45,7 +42,7 @@ export function getLedgers(transactions) {
 }
 
 /**
-  * Returns all transactions from a given category from a list of transactions
+  * Returns all transactions from a given ledger
   **/
 export function getTransactionsByLedger(transactions, ledger) {
   return _.compact(_.map(transactions, (key) => {
@@ -56,7 +53,7 @@ export function getTransactionsByLedger(transactions, ledger) {
 }
 
 /**
-  * Returns all transactions from a given category from a list of transactions
+  * Returns all transactions from a given date
   **/
 export function getTransactionsByDate(transactions, date) {
   return _.compact(_.map(transactions, (key) => {
@@ -90,8 +87,8 @@ function getTransactionPageProperties(){
 }
 
 /**
-  * Returns an array of transactions up to the number provided
-  * Assumption: page 1 will always be the first page
+  * Returns an array of transactions up to the count provided.
+  * This calls getTransactionsByPage and will cycle through all the transaction pages.
   **/
 function getTransactionPagesByCount(maxCount, countPerPage){
   let page = 1;
@@ -103,7 +100,6 @@ function getTransactionPagesByCount(maxCount, countPerPage){
     currentCount = currentCount + countPerPage
     page++;
   }
-
   // flatten the transactions before we return it
   return Promise.all(transactions).then((transactions) => {
     return _.flatten(transactions);
@@ -144,7 +140,7 @@ function removeDuplicates(transactions) {
   for (let transaction in associativeTransactions) {
     nonDuplicatedTransactions[j++] = associativeTransactions[transaction];
   }
-  return Promise.all(nonDuplicatedTransactions);
+  return nonDuplicatedTransactions;
 }
 
 /**

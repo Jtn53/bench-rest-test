@@ -3,7 +3,7 @@ import { sprintf as sprintf } from 'sprintf-js';
 import * as logic from './functions.js';
 import _ from 'lodash';
 
-const transactionStringFormat = "%-15s%-50s%-10s%-40s";
+const transactionStringFormat = "%-13s%-43s%-10s%-40s";
 const viewMainMenu = 0;
 const viewLedgerOption = 1;
 const viewDailyBalanceOption = 2;
@@ -37,7 +37,6 @@ function showMainScreen(transactions){
 
   printLine();
   console.log(`TOTAL BALANCE: ${logic.getTotalBalance(storedTransactions)}`);
-  printLine();
   showMainMenu(transactions);
 }
 
@@ -55,7 +54,7 @@ function showMainMenu(transactions) {
       }
     }
   };
-
+  printLine();
   console.log("Select from the following options: ");
   console.log(`${viewMainMenu}) View all transactions`);
   console.log(`${viewLedgerOption}) View total balance from a ledger`);
@@ -104,7 +103,6 @@ function showLedgerScreen(transactions) {
       });
       printLine();
       console.log(`TOTAL BALANCE IN LEDGER: ${logic.getTotalBalance(transactionsInLedger)}`);
-      printLine();
       showMainMenu(transactions);
     });
   });
@@ -116,13 +114,18 @@ function showLedgerScreen(transactions) {
 function showDailyBalanceScreen(transactions) {
   let dates = logic.getDates(transactions);
   const dateStringFormat = "%-15s%-15s";
+
+  printLine();
   console.log(sprintf(dateStringFormat, "DATE", "RUNNING TOTAL"));
+  printLine();
 
   // Display all the dates + running totals
   let dateBalance = 0;
   _.map(dates, (key, value) => {
     dateBalance += logic.getTotalBalance(logic.getTransactionsByDate(transactions, key));
-    console.log(sprintf(dateStringFormat, key, dateBalance));
+    // Due to precision issues, need to round to 2 decimal places.
+    // Not the best fix. If I had more time, would look at alternate solution.
+    console.log(sprintf(dateStringFormat, key, dateBalance.toFixed(2)));
   });
   showMainMenu(transactions);
 }
