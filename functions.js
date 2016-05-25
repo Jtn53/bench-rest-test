@@ -1,122 +1,125 @@
-var axios = require('axios');
-var prompt = require('prompt');
-var _ = require('lodash');
+import axios from 'axios';
+import prompt from 'prompt';
+import _ from 'lodash';
 
-module.exports = {
-  /**
-    * Returns all transactions. It does the following:
-    * 1) Makes a single API call to find the total # of transactions
-    * 2) Based on that # to know when to stop, it grabs all the transactions
-    * 3) Removes duplicates
-    * 4) Cleans company names
-    **/
-  getAllTransactions : function() {
-    return new Promise(function(resolve,reject) {
-      getTransactionsTotalCount().then(function(transactionCount) {
-        return getTransactionPagesByCount(transactionCount);
-      }).then(function(transactionsByPage) {
-        transactionsDuplicates = _.flatten(transactionsByPage);
-        return removeDuplicates(transactionsDuplicates);
-      }).then(function(nonDuplicatedTransactions) {
-        return cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
-      }).then(function(transactionsClean) {
-        resolve(transactionsClean);
-      }).catch(function(error) {
-        reject(error);
-      });
+/**
+  * Returns all transactions. It does the following:
+  * 1) Makes a single API call to find the total # of transactions
+  * 2) Based on that # to know when to stop, it grabs all the transactions
+  * 3) Removes duplicates
+  * 4) Cleans company names
+  **/
+export function getAllTransactions() {
+  return new Promise(function(resolve,reject) {
+    getTransactionPageProperties().then(([totalCount, countPerPage]) => {
+      return getTransactionPagesByCount(totalCount, countPerPage);
+    }).then((transactionsByPage) => {
+      return removeDuplicates(transactionsByPage);
+    }).then((nonDuplicatedTransactions) => {
+      return cleanCompanyNamesInTransactions(nonDuplicatedTransactions);
+    }).then((transactionsClean) => {
+      resolve(transactionsClean);
+    }).catch((err) => {
+      reject(err);
     });
-  },
+  });
+}
 
+/**
+  * Return the total balance from a given array of transactions
+  **/
+export function getTotalBalance(transactions) {
+  let sum = _.sum(_.map(transactions, (key) => { return Number(key.Amount); }));
   /**
-    * Return the total balance from a given array of transactions
-    **/
-  getTotalBalance : function(transactions) {
-    return _.sum(_.map(transactions, function(key, value) {
-      return _.toNumber(key.Amount);
-    }));
-  },
+    * We are rounding to 2 decimal places. There is a transaction that's causing
+    * the sum to freak out and go to like 8 decimals. Due to time, this is the workaround.
+    */
+  return sum.toFixed(2);
+}
 
-  /**
-    * Returns an array of available unique ledgers from a list of transactions
-    **/
-  getLedgers : function(transactions) {
-    return _.uniq(_.map(transactions, (key, value) => key.Ledger ));
-  },
+/**
+  * Returns an array of available unique ledgers from a list of transactions
+  **/
+export function getLedgers(transactions) {
+  return _.uniq(_.map(transactions, (key) => key.Ledger ));
+}
 
-  /**
-    * Returns all transactions from a given category from a list of transactions
-    **/
-  getTransactionsByLedger : function(transactions, ledger) {
-    return _.compact(_.map(transactions, function(key, value) {
-      if (key.Ledger == ledger) {
-        return key;
-      }
-    }));
-  },
+/**
+  * Returns all transactions from a given category from a list of transactions
+  **/
+export function getTransactionsByLedger(transactions, ledger) {
+  return _.compact(_.map(transactions, (key) => {
+    if (key.Ledger == ledger) {
+      return key;
+    }
+  }));
+}
 
-  /**
-    * Returns all transactions from a given category from a list of transactions
-    **/
-  getTransactionsByDate : function(transactions, date) {
-    return _.compact(_.map(transactions, function(key, value) {
-      if (key.Date == date) {
-        return key;
-      }
-    }));
-  },
+/**
+  * Returns all transactions from a given category from a list of transactions
+  **/
+export function getTransactionsByDate(transactions, date) {
+  return _.compact(_.map(transactions, (key) => {
+    if (key.Date == date) {
+      return key;
+    }
+  }));
+}
 
-  /**
-    * Returns an array of unique dates from a list of transactions, sorted from earliest to latest
-    **/
-  getDates : function(transactions) {
-    return _.sortBy(_.uniq(_.map(transactions, (key, value) => key.Date )));
-  }
+/**
+  * Returns an array of unique dates from a list of transactions, sorted from earliest to latest
+  **/
+export function getDates(transactions) {
+  return _.sortBy(_.uniq(_.map(transactions, (key) => key.Date )));
 }
 
 /**
   * Return the total number of transactions. Assume that as long as there's at least
   * one transaction, the 1.json page will exist
   **/
-function getTransactionsTotalCount(){
-  return new Promise(function(resolve, reject) {
-    var url = "https://resttest.bench.co/transactions/1.json";
-    axios.get(url).then(function (response) {
-        resolve(response.data.totalCount);
-      }).catch(function(error) {
-        reject(error);
-      });
-  });
+function getTransactionPageProperties(){
+  const url = "https://resttest.bench.co/transactions/1.json";
+
+  return new Promise((resolve, reject) => {
+    axios.get(url).then((response) => {
+      resolve([response.data.totalCount, Object.keys(response.data.transactions).length]);
+    }).catch(err => {
+      console.log(err);
+    });
+  })
 }
 
 /**
   * Returns an array of transactions up to the number provided
+  * Assumption: page 1 will always be the first page
   **/
-function getTransactionPagesByCount(maxCount){
-  var page = 1;
-  var currentCount = 0;
-  var transactions = [];
-  var transactionsPerPage = 10;
+function getTransactionPagesByCount(maxCount, countPerPage){
+  let page = 1;
+  let currentCount = 0;
+  let transactions = [];
 
   while (currentCount < maxCount) {
     transactions.push(getTransactionsByPage(page));
-    currentCount = currentCount + transactionsPerPage
+    currentCount = currentCount + countPerPage
     page++;
   }
 
-  return Promise.all(transactions);
+  // flatten the transactions before we return it
+  return Promise.all(transactions).then((transactions) => {
+    return _.flatten(transactions);
+  });
 }
 
 /**
   * Returns an array of transaction arrays in a given page by calling the API
   **/
 function getTransactionsByPage(page) {
-  return new Promise(function(resolve, reject) {
-    var url = "https://resttest.bench.co/transactions/" + page + ".json";
-
-    axios.get(url).then(function (response) {
-        resolve(response.data.transactions);
-    }).catch(function(err) {
-      reject(err);
+  let url = `https://resttest.bench.co/transactions/${page}.json`;
+  return new Promise((resolve, reject) => {
+    axios.get(url).then((response) => {
+      resolve(response.data.transactions);
+    }).catch((err) => {
+      console.log(err);
     });
   });
 }
@@ -124,22 +127,22 @@ function getTransactionsByPage(page) {
 /**
   * Takes in array of transactions and returns array with duplicates removed
   * Assumption is that transactions with the same date, ledger, and value are duplicates.
-  * This is a pretty ghetto way to remove dupes. If I have time, this can be better.
+  * This is a pretty ghetto way to remove duplicates. If I have time, this can be better.
   **/
 function removeDuplicates(transactions) {
   // Create an associative array that has the transaction details all stored in the key
-  var associativeTransactions = {};
-  for(var i=0; i<transactions.length; i++) {
-    var transaction = transactions[i];
+  let associativeTransactions = {};
+  for(let i=0; i<transactions.length; i++) {
+    let transaction = transactions[i];
     associativeTransactions[transaction.Date + transaction.Ledger + transaction.Amount + transaction.Company] = transaction;
   }
   /** Since duplicate keys aren't allowed, by copying the associative array to a new one,
     * any duplicate keys about to be inserted into the new array will be ignored.
     **/
-  var i = 0;
-  var nonDuplicatedTransactions = [];
-  for (var transaction in associativeTransactions) {
-    nonDuplicatedTransactions[i++] = associativeTransactions[transaction];
+  let j = 0;
+  let nonDuplicatedTransactions = [];
+  for (let transaction in associativeTransactions) {
+    nonDuplicatedTransactions[j++] = associativeTransactions[transaction];
   }
   return Promise.all(nonDuplicatedTransactions);
 }
@@ -149,7 +152,7 @@ function removeDuplicates(transactions) {
   * For now, I am making the assumption that anything not alphanumeric or a space is "garbage"
   **/
 function cleanCompanyNamesInTransactions(transactions) {
-  return _.map(transactions, function(key, value) {
+  return _.map(transactions, (key) => {
     key.Company = key.Company.replace(/[^A-Za-z\s]/g, '');
     return key;
   });

@@ -6,8 +6,8 @@ prompt.start();
 console.log("Starting program!");
 
 // grab all the transactions, then display to user
-logic.getAllTransactions().then(function(transactions) {
+logic.getAllTransactions().then((transactions) => {
   menus.navigateToMenu(0, transactions);
-}).catch(function(err) {
+}).catch((err) => {
   console.log(err);
 });
