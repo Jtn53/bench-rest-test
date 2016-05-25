@@ -71,8 +71,8 @@ export function getDates(transactions) {
 }
 
 /**
-  * Return the total number of transactions. Assume that as long as there's at least
-  * one transaction, the 1.json page will exist
+  * Return the total number of transactions in total and per page. 
+  * Assume that as long as there's at least one transaction, the 1.json page will exist
   **/
 function getTransactionPageProperties(){
   const url = "https://resttest.bench.co/transactions/1.json";
@@ -95,6 +95,7 @@ function getTransactionPagesByCount(maxCount, countPerPage){
   let currentCount = 0;
   let transactions = [];
 
+  // As long as we haven't reached the maxCount, continue to push transactions into the array
   while (currentCount < maxCount) {
     transactions.push(getTransactionsByPage(page));
     currentCount = currentCount + countPerPage
