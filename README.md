@@ -1,6 +1,7 @@
 # Justin's Rest Test Application
 
 Console application that fulfills the requirements in https://resttest.bench.co
+
 Utilizes ES6 features and promises
 
 ## Setup
